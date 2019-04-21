@@ -106,6 +106,10 @@ func (b *FileBuilder) Load() (string, error) {
 	return b.load()
 }
 
+func (b *FileBuilder) LoadFiles() ([]string, error) {
+	return b.loadFiles()
+}
+
 /* Save spawns the file selection dialog using the configured settings,
 asking the user for a filename to save as. If the chosen file exists, the
 user is prompted whether they want to overwrite the file. Returns

@@ -2,6 +2,7 @@ package dialog
 
 import (
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"syscall"
 	"unicode/utf16"
@@ -51,12 +52,42 @@ func (d filedlg) Filename() string {
 	return string(utf16.Decode(d.buf[:i]))
 }
 
+func (d filedlg) Filenames() []string {
+	var path string
+	var out []string
+	var b []uint16
+	for i := 0; i < len(d.buf); i++ {
+		if d.buf[i] == 0 && len(b) > 0 {
+			if path == "" {
+				path = string(utf16.Decode(b))
+			} else {
+				out = append(out, filepath.Join(path, string(utf16.Decode(b))))
+			}
+			b = []uint16{}
+		} else if d.buf[i] != 0 {
+			b = append(b, d.buf[i])
+		}
+	}
+	if len(out) == 0 {
+		out = append(out, path)
+	}
+	return out
+}
+
 func (b *FileBuilder) load() (string, error) {
 	d := openfile(w32.OFN_FILEMUSTEXIST, b)
 	if w32.GetOpenFileName(d.opf) {
 		return d.Filename(), nil
 	}
 	return "", err()
+}
+
+func (b *FileBuilder) loadFiles() ([]string, error) {
+	d := openfile(w32.OFN_FILEMUSTEXIST|w32.OFN_ALLOWMULTISELECT|w32.OFN_EXPLORER, b)
+	if w32.GetOpenFileName(d.opf) {
+		return d.Filenames(), nil
+	}
+	return []string{}, err()
 }
 
 func (b *FileBuilder) save() (string, error) {
@@ -124,7 +155,7 @@ type dirdlg struct {
 }
 
 func selectdir(b *DirectoryBuilder) (d dirdlg) {
-	d.bi = &w32.BROWSEINFO{Flags: w32.BIF_RETURNONLYFSDIRS}
+	d.bi = &w32.BROWSEINFO{Flags: w32.BIF_RETURNONLYFSDIRS | w32.BIF_USENEWUI | w32.BIF_NONEWFOLDERBUTTON}
 	if b.Dlg.Title != "" {
 		d.bi.Title, _ = syscall.UTF16PtrFromString(b.Dlg.Title)
 	}
