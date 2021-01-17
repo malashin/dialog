@@ -20,7 +20,7 @@ func (e WinDlgError) Error() string {
 func err() error {
 	e := w32.CommDlgExtendedError()
 	if e == 0 {
-		return Cancelled
+		return ErrCancelled
 	}
 	return WinDlgError(e)
 }
@@ -166,7 +166,7 @@ func (b *DirectoryBuilder) browse() (string, error) {
 	d := selectdir(b)
 	res := w32.SHBrowseForFolder(d.bi)
 	if res == 0 {
-		return "", Cancelled
+		return "", ErrCancelled
 	}
 	return w32.SHGetPathFromIDList(res), nil
 }
